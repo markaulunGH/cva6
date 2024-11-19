@@ -1,10 +1,18 @@
 set partNumber $::env(XILINX_PART)
-set boardName  $::env(XILINX_BOARD)
-
+#set partNumber "xc7k325tffg676-2"
 set ipName xlnx_ila
 
 create_project $ipName . -force -part $partNumber
-set_property board_part $boardName [current_project]
+
+if {$::env(BOARD) eq "325tdiy"} {
+} else {
+       	set boardName  $::env(XILINX_BOARD)
+	set_property board_part $boardName [current_project]
+}
+
+
+#create_project $ipName . -force -part $partNumber
+#set_property board_part $boardName [current_project]
 
 create_ip -name ila -vendor xilinx.com -library ip -module_name $ipName
 set_property -dict [list  CONFIG.C_NUM_OF_PROBES {8} \

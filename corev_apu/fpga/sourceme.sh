@@ -12,6 +12,13 @@ if [ "$BOARD" = "genesys2" ]; then
   export XILINX_BOARD="digilentinc.com:genesys2:part0:1.1"
   export CLK_PERIOD_NS="20"
 fi
+if [ "$BOARD" = "325tdiy" ]; then
+  echo -n "Configuring for "
+  echo "325tdiy"
+  export XILINX_PART="xc7k325tffg676-2"
+  export XILINX_BOARD=""
+  export CLK_PERIOD_NS="20"
+fi
 
 if [ "$BOARD" = "kc705" ]; then
   echo -n "Configuring for "

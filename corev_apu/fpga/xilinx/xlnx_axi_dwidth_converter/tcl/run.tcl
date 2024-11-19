@@ -1,11 +1,12 @@
 set partNumber $::env(XILINX_PART)
-set boardName  $::env(XILINX_BOARD)
-
 set ipName xlnx_axi_dwidth_converter
-
 create_project $ipName . -force -part $partNumber
-set_property board_part $boardName [current_project]
 
+if {$::env(BOARD) eq "325tdiy"} {
+} else {
+	set boardName  $::env(XILINX_BOARD)
+	set_property board_part $boardName [current_project]
+}
 create_ip -name axi_dwidth_converter -vendor xilinx.com -library ip -module_name $ipName
 
 set_property -dict [list CONFIG.SI_DATA_WIDTH {64} CONFIG.SI_ID_WIDTH {5} CONFIG.MI_DATA_WIDTH {32}] [get_ips $ipName]

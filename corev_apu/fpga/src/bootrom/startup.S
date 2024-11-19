@@ -8,6 +8,7 @@
   .option norvc
   .globl _prog_start
 _prog_start:
+  jal _prog_start
   smp_pause(s1, s2)
   li sp, 0x84000000
   call main

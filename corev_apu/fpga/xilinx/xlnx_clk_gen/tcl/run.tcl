@@ -1,10 +1,13 @@
 set partNumber $::env(XILINX_PART)
-set boardName  $::env(XILINX_BOARD)
-
 set ipName xlnx_clk_gen
 
 create_project $ipName . -force -part $partNumber
-set_property board_part $boardName [current_project]
+
+if {$::env(BOARD) eq "325tdiy"} {
+} else {
+    set boardName  $::env(XILINX_BOARD)
+    set_property board_part $boardName [current_project]
+}
 
 create_ip -name clk_wiz -vendor xilinx.com -library ip -module_name $ipName
 

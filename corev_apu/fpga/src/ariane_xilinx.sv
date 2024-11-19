@@ -46,6 +46,41 @@ module ariane_xilinx (
   input  logic [ 7:0]  sw          ,
   output logic         fan_pwm     ,
   input  logic         trst_n      ,
+`elsif K7325tdiy
+  input  logic         sys_clk_p   ,
+  input  logic         sys_clk_n   ,
+
+  input  logic         cpu_resetn   ,
+  inout  logic [63:0]  ddr3_dq     ,
+  inout  logic [ 7:0]  ddr3_dqs_n  ,
+  inout  logic [ 7:0]  ddr3_dqs_p  ,
+  output logic [14:0]  ddr3_addr   ,
+  output logic [ 2:0]  ddr3_ba     ,
+  output logic         ddr3_ras_n  ,
+  output logic         ddr3_cas_n  ,
+  output logic         ddr3_we_n   ,
+  output logic         ddr3_reset_n,
+  output logic [ 0:0]  ddr3_ck_p   ,
+  output logic [ 0:0]  ddr3_ck_n   ,
+  output logic [ 0:0]  ddr3_cke    ,
+  output logic [ 0:0]  ddr3_cs_n   ,
+  output logic [ 7:0]  ddr3_dm     ,
+  output logic [ 0:0]  ddr3_odt    ,
+
+//  output wire          eth_rst_n   ,
+  input  wire          eth_rxck    ,
+  input  wire          eth_rxctl   ,
+  input  wire [3:0]    eth_rxd     ,
+  output wire          eth_txck    ,
+  output wire          eth_txctl   ,
+  output wire [3:0]    eth_txd     ,
+  inout  wire          eth_mdio    ,
+  output logic         eth_mdc     ,
+  output logic [ 7:0]  led         ,
+//  input  logic [ 7:0]  sw          ,
+//  output logic         fan_pwm     ,
+//  input  logic         trst_n      ,
+
 `elsif KC705
   input  logic         sys_clk_p   ,
   input  logic         sys_clk_n   ,
@@ -185,6 +220,41 @@ module ariane_xilinx (
   input  logic        rx          ,
   output logic        tx
 );
+`ifdef K7325tdiy_ila
+wire  wire_trst_n;
+assign wire_trst_n = trst_n;
+//wire wire_ddr_sync_reset;
+//assign wire_ddr_sync_reset = ddr_sync_reset; 
+wire wire_tck,wire_tms,wire_tdi;
+assign wire_tck=tck;
+assign wire_tms=tms;
+assign wire_tdi=tdi;
+wire [1:0] uart_rx_tx;
+assign uart_rx_tx={rx,tx};
+wire wire_sys_clk_p;
+//IBUF sys_reset_n_ibuf (.O(sys_rst_n_c), .I(sys_rst_n));
+//BUFG i_sys_clk_bug(
+//  .O    (wire_sys_clk_p),
+//  .I    (sys_clk_p)
+
+//);
+
+
+
+
+xlnx_ila i_ila(
+  .clk      ( ddr_clock_out),
+  .probe0   (wire_trst_n   ),
+  .probe1   (wire_tck      ),
+  .probe2   (wire_tms      ),
+  .probe3   ({spi_miso,spi_mosi,spi_ss,spi_clk_o}     ),
+  .probe4   (wire_tdi      ),
+  .probe5   (tdo          ),
+  .probe6   (uart_rx_tx     ),
+  .probe7   (1'b0)
+);
+
+`endif
 
 // CVA6 Xilinx configuration
 function automatic config_pkg::cva6_cfg_t build_fpga_config(config_pkg::cva6_user_cfg_t CVA6UserCfg);
@@ -273,6 +343,11 @@ assign cpu_resetn = ~cpu_reset;
 `elsif GENESYSII
 logic cpu_reset;
 assign cpu_reset  = ~cpu_resetn;
+`elsif K7325tdiy 
+logic cpu_reset;
+assign cpu_reset  = ~cpu_resetn;
+//logic trst_n;
+assign trst_n = cpu_resetn;
 `elsif KC705
 assign cpu_resetn = ~cpu_reset;
 `elsif VC707
@@ -857,6 +932,10 @@ end
   logic [3:0] unused_switches = 4'b0000;
 `endif
 
+`ifdef K7325tdiy
+  logic [7:0] unused_switches = 8'b0000000;
+`endif
+
 logic clk_200MHz_ref;
 
 ariane_peripherals #(
@@ -914,6 +993,9 @@ ariane_peripherals #(
     `ifdef KC705
       .leds_o         ( {led[3:0], unused_led[7:4]}),
       .dip_switches_i ( {sw, unused_switches}     )
+    `elsif K7325tdiy  
+      .leds_o         ( led                       ),
+      .dip_switches_i ( unused_switches           )
     `else
       .leds_o         ( led                       ),
       .dip_switches_i ( sw                        )
@@ -1164,7 +1246,7 @@ fan_ctrl i_fan_ctrl (
     .clk_i         ( clk        ),
     .rst_ni        ( ndmreset_n ),
     .pwm_setting_i ( '1         ),
-    .fan_pwm_o     ( fan_pwm    )
+    .fan_pwm_o     (            )
 );
 
 xlnx_mig_7_ddr3 i_ddr (
@@ -1196,7 +1278,7 @@ xlnx_mig_7_ddr3 i_ddr (
     .ui_clk_sync_rst ( ddr_sync_reset ),
     .aresetn         ( ndmreset_n     ),
     .s_axi_awid,
-    .s_axi_awaddr    ( s_axi_awaddr[29:0] ),
+    .s_axi_awaddr    ( s_axi_awaddr[30:0] ),//K7325diy is 2GB ddr3 => 31bits addr;GENESYSII is 1GB => 30 bits addr
     .s_axi_awlen,
     .s_axi_awsize,
     .s_axi_awburst,
@@ -1216,7 +1298,7 @@ xlnx_mig_7_ddr3 i_ddr (
     .s_axi_bresp,
     .s_axi_bvalid,
     .s_axi_arid,
-    .s_axi_araddr     ( s_axi_araddr[29:0] ),
+    .s_axi_araddr     ( s_axi_araddr[30:0] ),//K7325diy is 2GB ddr3 => 31bits addr;GENESYSII is 1GB => 30 bits addr
     .s_axi_arlen,
     .s_axi_arsize,
     .s_axi_arburst,
